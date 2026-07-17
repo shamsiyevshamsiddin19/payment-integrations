@@ -1,5 +1,9 @@
 # payment-integrations
 
+<p align="center">
+  <img src="assets/social-preview.png" alt="payment-integrations" width="100%">
+</p>
+
 O'zbekiston to'lov tizimlarini **o'z loyihangizga** qo'shish uchun tayyor kod.
 
 Har bir integratsiya uch tilda: **Python**, **PHP**, **TypeScript**. Kutubxona

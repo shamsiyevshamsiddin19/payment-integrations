@@ -22,7 +22,7 @@ papkani ko'chir  →  .env ni to'ldir  →  bitta faylni bazangizga bog'la  → 
 |---|:---:|:---:|:---:|---|
 | [**Click**](click) (my.click.uz) | [✅](click/python) | [✅](click/php) | [✅](click/typescript) | Tayyor |
 | [**Payme**](payme) (checkout.paycom.uz) | [✅](payme/python) | [✅](payme/php) | [✅](payme/typescript) | Tayyor |
-| Uzum Bank | — | — | — | Rejada |
+| [**Uzum Bank**](uzum) (uzumbank.uz) | [✅](uzum/python) | [✅](uzum/php) | [✅](uzum/typescript) | Tayyor |
 
 ### Click
 
@@ -48,6 +48,22 @@ to'langandan keyingi bekor qilish (refund).
 | [**PHP**](payme/php) | Oddiy hosting, Laravel · MySQL, PDO | 46 |
 | [**TypeScript**](payme/typescript) | Next.js, Express · Prisma | 30 |
 
+### Uzum Bank
+
+Merchant API — 5 webhook (`check`, `create`, `confirm`, `reverse`, `status`).
+HTTP Basic Auth, 30 daqiqalik timeout, to'langandan keyingi bekor qilish
+(refund).
+
+> ⚠️ Click/Payme'dan tubdan farq qiladi: **to'lov havolasi yo'q**
+> (foydalanuvchi Uzum Bank ilovasida `service_id` orqali sizni topadi) va
+> **takroriy so'rov muvaffaqiyat emas, xato qaytaradi** — pastga qarang.
+
+| | Qo'llab-quvvatlaydi | Testlar |
+|---|---|---|
+| [**Python**](uzum/python) | FastAPI, Flask · PostgreSQL, MySQL, SQLite | 27 |
+| [**PHP**](uzum/php) | Oddiy hosting, Laravel · MySQL, PDO | 42 |
+| [**TypeScript**](uzum/typescript) | Next.js, Express · Prisma | 25 |
+
 ---
 
 ## AI bilan ulash
@@ -63,7 +79,8 @@ loyihamga to'liq ulab ber.
 AI loyihangizni o'rganadi, bazangizga bog'laydi, endpoint'larni qo'shadi,
 migratsiya yozadi va tekshiradi. Ko'rsatmada eng ko'p uchraydigan xatolar
 (atomar `mark_paid`, auth middleware, imzodagi xom `amount`, Payme'da
-tiyin/so'm chalkashligi) qat'iy qoida qilib yozilgan — AI ularda qoqilmaydi.
+tiyin/so'm chalkashligi, Uzum Bank'da takroriy so'rovni "idempotent qilib
+tuzatish") qat'iy qoida qilib yozilgan — AI ularda qoqilmaydi.
 
 ---
 
@@ -88,13 +105,20 @@ qurilgan.
 qaytarsangiz `"5000"` bo'ladi va imzo mos kelmaydi — hamma to'lov `-1` bilan
 rad etiladi. Kod `amount` ga tegmaydi.
 
-**3. Yopiq endpoint.** Callback Click yoki Payme serveridan keladi — ular
-sizning tizimingizga login qila olmaydi va CSRF token yubormaydi. Global auth
-middleware bo'lsa, so'rov 403 oladi va to'lovlar umuman ishlamaydi.
+**3. Yopiq endpoint.** Callback Click, Payme yoki Uzum Bank serveridan keladi
+— ular sizning tizimingizga login qila olmaydi va CSRF token yubormaydi.
+Global auth middleware bo'lsa, so'rov 403 oladi va to'lovlar umuman ishlamaydi.
 
 Payme'da yana bitta o'ziga xos tuzoq bor: **summa TIYINDA** (1 so'm = 100
 tiyin), Click esa so'mda ishlaydi. Ikkalasini aralashtirib yuborish — eng
 tez-tez uchraydigan Payme xatosi.
+
+**Uzum Bank esa boshqacha tuzoq qo'yadi: takroriy so'rov muvaffaqiyat emas.**
+Click va Payme'da takroriy callback "idempotent" — bir xil natijani qaytarasiz.
+Uzum Bank'da **teskarisi**: bir xil `transId` bilan ikkinchi `/create` yoki
+`/confirm` kelsa, to'g'ri javob aniq xato kodi (`10010` / `10016`), oldingi
+muvaffaqiyatni qaytarish emas. Buni "tuzatib", idempotent qilib qo'yish —
+Uzum Bank sertifikatsiyasidan o'tmaydi.
 
 ---
 
@@ -104,13 +128,13 @@ tez-tez uchraydigan Payme xatosi.
 - `secret_key` kodda ham, loglarda ham, to'lov havolasida ham yo'q — testlar
   buni alohida tekshiradi.
 - Imzo/parol `hash_equals` / `timingSafeEqual` bilan solishtiriladi (Click —
-  `sign_string`, Payme — HTTP Basic Auth).
+  `sign_string`, Payme va Uzum Bank — HTTP Basic Auth).
 - `action` so'rovdan olinmaydi — endpoint o'zi belgilaydi, shuning uchun
   Click'da `prepare` uchun olingan imzoni `complete` ga qo'yib bo'lmaydi.
 - Summa har doim bazadan tekshiriladi.
 
-Agar `secret_key` ommaga chiqib ketsa — tegishli kabinetdan (Click yoki
-Payme) darhol yangilang.
+Agar `secret_key`/parol ommaga chiqib ketsa — tegishli kabinetdan (Click,
+Payme yoki Uzum Bank) darhol yangilang.
 
 ---
 

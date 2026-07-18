@@ -21,7 +21,7 @@ papkani ko'chir  →  .env ni to'ldir  →  bitta faylni bazangizga bog'la  → 
 | To'lov tizimi | Python | PHP | TypeScript | Holati |
 |---|:---:|:---:|:---:|---|
 | [**Click**](click) (my.click.uz) | [✅](click/python) | [✅](click/php) | [✅](click/typescript) | Tayyor |
-| Payme | — | — | — | Rejada |
+| [**Payme**](payme) (checkout.paycom.uz) | [✅](payme/python) | [✅](payme/php) | [✅](payme/typescript) | Tayyor |
 | Uzum Bank | — | — | — | Rejada |
 
 ### Click
@@ -34,6 +34,19 @@ himoyasi, atomar to'lov belgilash.
 | [**Python**](click/python) | FastAPI, Flask, Django · PostgreSQL, MySQL, SQLite | 21 |
 | [**PHP**](click/php) | Oddiy hosting, Laravel, Slim · MySQL, PDO | 42 |
 | [**TypeScript**](click/typescript) | Next.js, Express, Hono · Prisma, Drizzle | 26 |
+
+### Payme
+
+Merchant API — 6 metod (`CheckPerformTransaction`, `CreateTransaction`,
+`PerformTransaction`, `CancelTransaction`, `CheckTransaction`,
+`GetStatement`), bitta endpoint. HTTP Basic Auth, 12 soatlik timeout,
+to'langandan keyingi bekor qilish (refund).
+
+| | Qo'llab-quvvatlaydi | Testlar |
+|---|---|---|
+| [**Python**](payme/python) | FastAPI, Flask, Django · PostgreSQL, MySQL, SQLite | 31 |
+| [**PHP**](payme/php) | Oddiy hosting, Laravel · MySQL, PDO | 46 |
+| [**TypeScript**](payme/typescript) | Next.js, Express · Prisma | 30 |
 
 ---
 
@@ -49,8 +62,8 @@ loyihamga to'liq ulab ber.
 
 AI loyihangizni o'rganadi, bazangizga bog'laydi, endpoint'larni qo'shadi,
 migratsiya yozadi va tekshiradi. Ko'rsatmada eng ko'p uchraydigan xatolar
-(atomar `mark_paid`, auth middleware, imzodagi xom `amount`) qat'iy qoida qilib
-yozilgan — AI ularda qoqilmaydi.
+(atomar `mark_paid`, auth middleware, imzodagi xom `amount`, Payme'da
+tiyin/so'm chalkashligi) qat'iy qoida qilib yozilgan — AI ularda qoqilmaydi.
 
 ---
 
@@ -75,9 +88,13 @@ qurilgan.
 qaytarsangiz `"5000"` bo'ladi va imzo mos kelmaydi — hamma to'lov `-1` bilan
 rad etiladi. Kod `amount` ga tegmaydi.
 
-**3. Yopiq endpoint.** Callback Click serveridan keladi — u sizning tizimingizga
-login qila olmaydi va CSRF token yubormaydi. Global auth middleware bo'lsa,
-Click 403 oladi va to'lovlar umuman ishlamaydi.
+**3. Yopiq endpoint.** Callback Click yoki Payme serveridan keladi — ular
+sizning tizimingizga login qila olmaydi va CSRF token yubormaydi. Global auth
+middleware bo'lsa, so'rov 403 oladi va to'lovlar umuman ishlamaydi.
+
+Payme'da yana bitta o'ziga xos tuzoq bor: **summa TIYINDA** (1 so'm = 100
+tiyin), Click esa so'mda ishlaydi. Ikkalasini aralashtirib yuborish — eng
+tez-tez uchraydigan Payme xatosi.
 
 ---
 
@@ -86,12 +103,14 @@ Click 403 oladi va to'lovlar umuman ishlamaydi.
 - `.env` hech qachon git'ga tushmaydi (`.gitignore` da).
 - `secret_key` kodda ham, loglarda ham, to'lov havolasida ham yo'q — testlar
   buni alohida tekshiradi.
-- Imzo `hash_equals` / `timingSafeEqual` bilan solishtiriladi.
+- Imzo/parol `hash_equals` / `timingSafeEqual` bilan solishtiriladi (Click —
+  `sign_string`, Payme — HTTP Basic Auth).
 - `action` so'rovdan olinmaydi — endpoint o'zi belgilaydi, shuning uchun
-  `prepare` uchun olingan imzoni `complete` ga qo'yib bo'lmaydi.
+  Click'da `prepare` uchun olingan imzoni `complete` ga qo'yib bo'lmaydi.
 - Summa har doim bazadan tekshiriladi.
 
-Agar `secret_key` ommaga chiqib ketsa — Click kabinetidan darhol yangilang.
+Agar `secret_key` ommaga chiqib ketsa — tegishli kabinetdan (Click yoki
+Payme) darhol yangilang.
 
 ---
 
